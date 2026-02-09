@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Usage: osc52-tty /dev/pts/N
+tty_target="$1"
+buf=$(cat)
+b64=$(printf %s "$buf" | base64 | tr -d '\r\n')
+
+# Plain OSC 52 sequence
+osc52() { printf '\033]52;c;%s\007' "$1"; }
+
+# If going through tmux, wrap in DCS passthrough; otherwise plain.
+if [ -n "$TMUX" ]; then
+  # ESC P tmux;  ESC  OSC52 ... BEL  ESC \
+  printf '\033Ptmux;'
+  printf '\033'
+  osc52 "$b64"
+  printf '\033\\' > "$tty_target"
+else
+  osc52 "$b64" > "$tty_target"
+fi
